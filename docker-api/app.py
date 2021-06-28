@@ -4,31 +4,37 @@ import docker
 
 from flask import Flask, abort, request, render_template, url_for, flash, redirect
 
+from key import SECRET_KEY
+
 app = Flask(__name__)
+app.config['SECRET_KEY'] = SECRET_KEY
 client = docker.from_env()
-app.config['SECRET_KEY'] = 'Asw7we89cxhjy9'
 active_apps = {}
 
 
 def _start_apps(list_of_apps: list):
+    """Run all dockers from list_of_apps"""
     for app in list_of_apps:
-        active_apps[app['app_name']] = \
+        active_apps[app['id']] = \
             client.containers.run(app['path'], detach=True, ports={f"{app['http_port']}/tcp": None})
 
 
 def _stop_apps(list_of_apps: list):
+    """Stop all dockers from list_of_apps"""
     for app in list_of_apps:
-        active_apps[app['app_name']].stop()
-        del active_apps[app['app_name']]
+        active_apps[app['id']].stop()
+        del active_apps[app['id']]
 
 
 def _update_config(path: str, obj):
+    """Update your config file"""
     with open(path, 'w') as f:
         json.dump(obj, f)
 
 
 @app.before_first_request
 def start_api():
+    """Run all dockers at start of app"""
     global docker_apps, timestamp
     timestamp = os.stat('config.json').st_mtime
     with open('config.json', 'r') as f:
@@ -48,7 +54,8 @@ def get_apps():
 
 
 @app.route('/docker-api/apps/update', methods=['GET'])
-def update_config():
+def update_config_changes():
+    """Republication of docker containers according to config file, if it was changed"""
     global docker_apps, timestamp
     if timestamp != os.stat('config.json').st_mtime:
         timestamp = os.stat('config.json').st_mtime
@@ -62,6 +69,7 @@ def update_config():
 
 @app.route('/docker-api/apps/create', methods=['GET', 'POST'])
 def create_app():
+    """Create new docker container and run it"""
     if request.method == "POST":
         docker_app = {
             "app_name": request.form["app_name"],
@@ -85,10 +93,10 @@ def create_app():
 
 @app.route('/docker-api/apps/<int:app_id>/edit', methods=['GET', 'POST'])
 def update_app(app_id):
+    """Change docker container config and get republication of it"""
     global docker_apps
     docker_app = list(filter(lambda x: x['id'] == app_id, docker_apps['apps']))
     if request.method == 'POST':
-        _stop_apps(docker_app)
         docker_app[0]['app_name'] = request.form['app_name']
         docker_app[0]['path'] = request.form['path']
         docker_app[0]['http_port'] = request.form['http_port']
@@ -96,7 +104,10 @@ def update_app(app_id):
         if not all(docker_app[0].values()):
             flash('All attributes are required!')
         else:
-            docker_apps['apps'][app_id-1] = docker_app[0]
+            _stop_apps(docker_app)
+            for index, app in enumerate(docker_apps['apps']):
+                if app['id'] == docker_app[0]['id']:
+                    docker_apps['apps'][index] = docker_app[0]
             _update_config("config.json", docker_apps)
             _start_apps(docker_app)
             return redirect(url_for('get_apps'))
@@ -105,6 +116,7 @@ def update_app(app_id):
 
 @app.route('/docker-api/apps/<int:app_id>/delete', methods=['POST'])
 def del_app(app_id):
+    """Stop docker file and delete it from config"""
     docker_app = list(filter(lambda x: x['id'] == app_id, docker_apps['apps']))
     if len(docker_app) == 0:
         abort(404)
