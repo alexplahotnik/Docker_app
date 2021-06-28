@@ -1,6 +1,7 @@
 import os
 import json
-import docker
+import docker.errors
+import copy
 
 from flask import Flask, abort, request, render_template, url_for, flash, redirect
 
@@ -32,6 +33,19 @@ def _update_config(path: str, obj):
         json.dump(obj, f)
 
 
+def _check_config_errors_and_launch(config_file: dict):
+    error = False
+    iterate_file = copy.deepcopy(config_file['apps'])
+    for index, app in enumerate(iterate_file):
+        try:
+            _start_apps([app])
+        except docker.errors.ImageNotFound:
+            flash(f"You give wrong path to docker {app['app_name']}!")
+            del config_file['apps'][index]
+            error = True
+    return error
+
+
 @app.before_first_request
 def start_api():
     """Run all dockers at start of app"""
@@ -40,8 +54,8 @@ def start_api():
     with open('config.json', 'r') as f:
         docker_apps = json.load(f)
     if docker_apps['apps']:
-        _start_apps(docker_apps['apps'])
-
+        _check_config_errors_and_launch(docker_apps)
+        _update_config("config.json", docker_apps)
 
 @app.route('/')
 def index():
@@ -62,8 +76,8 @@ def update_config_changes():
         _stop_apps(docker_apps['apps'])
         with open('config.json', 'r') as f:
             docker_apps = json.load(f)
-        if docker_apps['apps']:
-            _start_apps(docker_apps['apps'])
+        _check_config_errors_and_launch(docker_apps)
+        _update_config("config.json", docker_apps)
     return redirect(url_for('get_apps'))
 
 
@@ -84,10 +98,14 @@ def create_app():
         if not all(docker_app.values()):
             flash("All attributes are required!")
         else:
-            docker_apps['apps'].append(docker_app)
-            _update_config("config.json", docker_apps)
-            _start_apps([docker_app])
-            return redirect(url_for('get_apps'))
+            try:
+                _start_apps([docker_app])
+            except docker.errors.ImageNotFound:
+                flash("You give wrong path to docker!")
+            else:
+                docker_apps['apps'].append(docker_app)
+                _update_config("config.json", docker_apps)
+                return redirect(url_for('get_apps'))
     return render_template('create.html')
 
 
@@ -104,13 +122,20 @@ def update_app(app_id):
         if not all(docker_app[0].values()):
             flash('All attributes are required!')
         else:
-            _stop_apps(docker_app)
-            for index, app in enumerate(docker_apps['apps']):
-                if app['id'] == docker_app[0]['id']:
-                    docker_apps['apps'][index] = docker_app[0]
-            _update_config("config.json", docker_apps)
-            _start_apps(docker_app)
-            return redirect(url_for('get_apps'))
+            try:
+                test = client.containers.run(docker_app[0]['path'], detach=True)
+            except docker.errors.ImageNotFound:
+                flash("You give wrong path to docker!")
+            else:
+                flash('Your changes have been saved successfully')
+                test.stop()
+                _stop_apps(docker_app)
+                for index, app in enumerate(docker_apps['apps']):
+                    if app['id'] == docker_app[0]['id']:
+                        docker_apps['apps'][index] = docker_app[0]
+                _update_config("config.json", docker_apps)
+                _start_apps(docker_app)
+                return render_template("apps_page.html", docker_apps=docker_apps['apps'])
     return render_template('config_corr.html', docker_app=docker_app)
 
 
