@@ -34,16 +34,13 @@ def _update_config(path: str, obj):
 
 
 def _check_config_errors_and_launch(config_file: dict):
-    error = False
     iterate_file = copy.deepcopy(config_file['apps'])
     for index, app in enumerate(iterate_file):
         try:
             _start_apps([app])
         except docker.errors.ImageNotFound:
-            flash(f"You give wrong path to docker {app['app_name']}!")
             del config_file['apps'][index]
-            error = True
-    return error
+            flash(f"You give wrong path to docker {app['app_name']}!")
 
 
 @app.before_first_request
@@ -56,6 +53,7 @@ def start_api():
     if docker_apps['apps']:
         _check_config_errors_and_launch(docker_apps)
         _update_config("config.json", docker_apps)
+
 
 @app.route('/')
 def index():
@@ -122,19 +120,18 @@ def update_app(app_id):
         if not all(docker_app[0].values()):
             flash('All attributes are required!')
         else:
-            try:
-                test = client.containers.run(docker_app[0]['path'], detach=True)
-            except docker.errors.ImageNotFound:
-                flash("You give wrong path to docker!")
-            else:
-                flash('Your changes have been saved successfully')
-                test.stop()
+            if docker_app[0]['id'] in active_apps:
                 _stop_apps(docker_app)
+            try:
+                _start_apps(docker_app)
+            except docker.errors.ImageNotFound:
+                flash(f"You give wrong path to docker {docker_app[0]['app_name']}!")
+            else:
                 for index, app in enumerate(docker_apps['apps']):
                     if app['id'] == docker_app[0]['id']:
                         docker_apps['apps'][index] = docker_app[0]
                 _update_config("config.json", docker_apps)
-                _start_apps(docker_app)
+                flash('Your changes have been saved successfully')
                 return render_template("apps_page.html", docker_apps=docker_apps['apps'])
     return render_template('config_corr.html', docker_app=docker_app)
 

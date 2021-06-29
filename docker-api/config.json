@@ -1,1 +1,1 @@
-{"apps": [{"app_name": "echo-server", "path": "jmalloc/echo-server", "http_port": "8080", "url": "http://localhost:8080", "id": 9}]}
+{"apps": [{"app_name": "catnip", "path": "alexplahotnik/catnip", "http_port": "5000", "url": "http://localhost:5000", "id": 1}, {"app_name": "echo-server2", "path": "jmalloc/echo-server", "http_port": "8080", "url": "http://localhost:8080", "id": 3}]}
