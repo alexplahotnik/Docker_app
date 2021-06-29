@@ -16,8 +16,9 @@ active_apps = {}
 def _start_apps(list_of_apps: list):
     """Run all dockers from list_of_apps"""
     for app in list_of_apps:
-        active_apps[app['id']] = \
-            client.containers.run(app['path'], detach=True, ports={f"{app['http_port']}/tcp": None})
+        active_apps[app['id']] = client.containers.run(
+            app['path'], detach=True, ports={f"{app['http_port']}/tcp": app['url'][app['url'].find('st:')+3:]}
+        )
 
 
 def _stop_apps(list_of_apps: list):
@@ -149,4 +150,4 @@ def del_app(app_id):
 
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(debug=False)

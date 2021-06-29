@@ -1,13 +1,14 @@
 <h1 align="center">Docker-runner API</h1>
-**A small python-flask API for for managing docker containers at local machine.**
+
 ---
+**A small python-flask API for managing docker containers at local machine.**
 
 # Description
 With this app you can manage docker containers from config.json file. Main page hosts on /docker-api/apps path. App has a simple UI, where you can add new docker, edit and delete it. 
-All local ports for running docker containers takes randomly. You can show it by ```$ docker ps``` command in command line.
+All local ports for running docker containers takes from url in config file.
 App control your path to dockers and give a massage if it will be wrong.
-Also, you can edit directly config.json file and then put to "Update config" link at main page. In that case, app check path to docker for all containers and delete wrong one.
-Be careful about ports, app doesn't check it.
+Also, you can edit directly config.json file and then put to "Update config" link at main page. In that case, the app check path to docker for all containers and delete wrong one.
+**Be careful about ports, app doesn't check it.**
 
 # Installation features
 
