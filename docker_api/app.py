@@ -1,9 +1,8 @@
 import os
 import json
 import docker.errors
-import copy
 
-from flask import Flask, abort, request, render_template, url_for, flash, redirect
+from flask import Flask, abort, request, render_template, url_for, flash, redirect, get_flashed_messages
 
 from key import SECRET_KEY
 
@@ -28,32 +27,36 @@ def _stop_apps(list_of_apps: list):
         del active_apps[app['id']]
 
 
-def _update_config(path: str, obj):
-    """Update your config file"""
+def _update_config(path: str, obj=None, operation=None):
+    """Update or read your config file"""
+    if operation == 'r':
+        with open(path, 'r') as f:
+            result = json.load(f)
+        return result
     with open(path, 'w') as f:
         json.dump(obj, f)
 
 
-def _check_config_errors_and_launch(config_file: dict):
-    iterate_file = copy.deepcopy(config_file['apps'])
-    for index, app in enumerate(iterate_file):
+def _check_path_errors_and_launch(list_of_dockers: list):
+    """Check all path, and doesnt run wrong one"""
+    error = False
+    for index, app in enumerate(list_of_dockers):
         try:
             _start_apps([app])
         except docker.errors.ImageNotFound:
-            del config_file['apps'][index]
             flash(f"You give wrong path to docker {app['app_name']}!")
+            error = True
+    return error
 
 
 @app.before_first_request
 def start_api():
     """Run all dockers at start of app"""
     global docker_apps, timestamp
-    timestamp = os.stat('config.json').st_mtime
-    with open('config.json', 'r') as f:
-        docker_apps = json.load(f)
+    timestamp = os.stat('docker_api/config.json').st_mtime
+    docker_apps = _update_config('docker_api/config.json', operation='r')
     if docker_apps['apps']:
-        _check_config_errors_and_launch(docker_apps)
-        _update_config("config.json", docker_apps)
+        _check_path_errors_and_launch(docker_apps['apps'])
 
 
 @app.route('/')
@@ -70,13 +73,12 @@ def get_apps():
 def update_config_changes():
     """Republication of docker containers according to config file, if it was changed"""
     global docker_apps, timestamp
-    if timestamp != os.stat('config.json').st_mtime:
-        timestamp = os.stat('config.json').st_mtime
-        _stop_apps(docker_apps['apps'])
-        with open('config.json', 'r') as f:
-            docker_apps = json.load(f)
-        _check_config_errors_and_launch(docker_apps)
-        _update_config("config.json", docker_apps)
+    if timestamp != os.stat('docker_api/config.json').st_mtime:
+        timestamp = os.stat('docker_api/config.json').st_mtime
+        if docker_apps['apps']:
+            _stop_apps(docker_apps['apps'])
+        docker_apps = _update_config('docker_api/config.json', operation='r')
+        _check_path_errors_and_launch(docker_apps['apps'])
     return redirect(url_for('get_apps'))
 
 
@@ -97,13 +99,9 @@ def create_app():
         if not all(docker_app.values()):
             flash("All attributes are required!")
         else:
-            try:
-                _start_apps([docker_app])
-            except docker.errors.ImageNotFound:
-                flash("You give wrong path to docker!")
-            else:
+            if not _check_path_errors_and_launch([docker_app]):
                 docker_apps['apps'].append(docker_app)
-                _update_config("config.json", docker_apps)
+                _update_config("docker_api/config.json", docker_apps)
                 return redirect(url_for('get_apps'))
     return render_template('create.html')
 
@@ -123,15 +121,11 @@ def update_app(app_id):
         else:
             if docker_app[0]['id'] in active_apps:
                 _stop_apps(docker_app)
-            try:
-                _start_apps(docker_app)
-            except docker.errors.ImageNotFound:
-                flash(f"You give wrong path to docker {docker_app[0]['app_name']}!")
-            else:
+            if not _check_path_errors_and_launch(docker_app):
                 for index, app in enumerate(docker_apps['apps']):
                     if app['id'] == docker_app[0]['id']:
                         docker_apps['apps'][index] = docker_app[0]
-                _update_config("config.json", docker_apps)
+                _update_config("docker_api/config.json", docker_apps)
                 flash('Your changes have been saved successfully')
                 return render_template("apps_page.html", docker_apps=docker_apps['apps'])
     return render_template('config_corr.html', docker_app=docker_app)
@@ -144,10 +138,10 @@ def del_app(app_id):
     if len(docker_app) == 0:
         abort(404)
     docker_apps['apps'].remove(docker_app[0])
-    _update_config("config.json", docker_apps)
+    _update_config("docker_api/config.json", docker_apps)
     _stop_apps(docker_app)
     return render_template("apps_page.html", docker_apps=docker_apps['apps'])
 
 
 if __name__ == '__main__':
-    app.run(debug=False)
+    app.run(debug=True, testing=True)
