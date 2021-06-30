@@ -1,4 +1,4 @@
-import copy
+#!/usr/bin/env python3
 import json
 import docker.errors
 
@@ -43,8 +43,8 @@ def _check_path_errors_and_launch(list_of_dockers: list):
     for index, app in enumerate(list_of_dockers):
         try:
             _start_apps([app])
-        except docker.errors.ImageNotFound:
-            flash(f"You give wrong path to docker {app['app_name']}!")
+        except (docker.errors.ImageNotFound, docker.errors.APIError):
+            flash(f"You give wrong data to docker {app['app_name']}!")
             error = True
     return error
 
@@ -143,7 +143,7 @@ def del_app(app_id):
 
 @app.route('/docker-api/apps/stop_all', methods=['GET'])
 def stop_all_apps():
-    """Stop all containers"""
+    """Stop all active containers"""
     global active_apps
     for app in active_apps:
         active_apps[app].stop()
@@ -151,6 +151,5 @@ def stop_all_apps():
     return redirect(url_for('get_apps'))
 
 
-
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(host='0.0.0.0', debug=True)
