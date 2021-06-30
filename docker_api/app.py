@@ -1,10 +1,10 @@
-import os
+import copy
 import json
 import docker.errors
 
 from flask import Flask, abort, request, render_template, url_for, flash, redirect, get_flashed_messages
 
-from key import SECRET_KEY
+SECRET_KEY = '1FGhw5s8'
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = SECRET_KEY
@@ -52,8 +52,7 @@ def _check_path_errors_and_launch(list_of_dockers: list):
 @app.before_first_request
 def start_api():
     """Run all dockers at start of app"""
-    global docker_apps, timestamp
-    timestamp = os.stat('docker_api/config.json').st_mtime
+    global docker_apps
     docker_apps = _update_config('docker_api/config.json', operation='r')
     if docker_apps['apps']:
         _check_path_errors_and_launch(docker_apps['apps'])
@@ -72,13 +71,12 @@ def get_apps():
 @app.route('/docker-api/apps/update', methods=['GET'])
 def update_config_changes():
     """Republication of docker containers according to config file, if it was changed"""
-    global docker_apps, timestamp
-    if timestamp != os.stat('docker_api/config.json').st_mtime:
-        timestamp = os.stat('docker_api/config.json').st_mtime
-        if docker_apps['apps']:
-            _stop_apps(docker_apps['apps'])
-        docker_apps = _update_config('docker_api/config.json', operation='r')
-        _check_path_errors_and_launch(docker_apps['apps'])
+    global docker_apps, active_apps
+    for app in active_apps:
+        active_apps[app].stop()
+    active_apps = {}
+    docker_apps = _update_config('docker_api/config.json', operation='r')
+    _check_path_errors_and_launch(docker_apps['apps'])
     return redirect(url_for('get_apps'))
 
 
@@ -127,7 +125,7 @@ def update_app(app_id):
                         docker_apps['apps'][index] = docker_app[0]
                 _update_config("docker_api/config.json", docker_apps)
                 flash('Your changes have been saved successfully')
-                return render_template("apps_page.html", docker_apps=docker_apps['apps'])
+                return redirect(url_for('get_apps'))
     return render_template('config_corr.html', docker_app=docker_app)
 
 
@@ -143,5 +141,16 @@ def del_app(app_id):
     return render_template("apps_page.html", docker_apps=docker_apps['apps'])
 
 
+@app.route('/docker-api/apps/stop_all', methods=['GET'])
+def stop_all_apps():
+    """Stop all containers"""
+    global active_apps
+    for app in active_apps:
+        active_apps[app].stop()
+    active_apps = {}
+    return redirect(url_for('get_apps'))
+
+
+
 if __name__ == '__main__':
-    app.run(debug=True, testing=True)
+    app.run(debug=True)

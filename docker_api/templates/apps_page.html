@@ -2,8 +2,11 @@
 
 {% block content %}
 <ul>
-    <a class="nav-link" href="{{url_for('create_app')}}">Add app</a>
-    <a class="nav-link" href="{{url_for('update_config_changes')}}">Update config</a>
+    <li>
+        <p><a class="nav-link" href="{{url_for('create_app')}}">Add app</a></p>
+        <p> <a class="nav-link" href="{{url_for('update_config_changes')}}">Restart containers according to config</a></p>
+        <p><a class="nav-link" href="{{url_for('stop_all_apps')}}">Stop apps</a></p>
+    </li>
 {% for app in docker_apps %}
     <li>
     {% for key, value in app.items() %}

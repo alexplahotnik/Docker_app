@@ -69,7 +69,6 @@ with api.app.test_client() as test_client:
 
 
     def test_update_config_changes():
-        api.timestamp = 1
         config = {"apps": [{"app_name": "catnip", "path": "alexplahotnik/catnip",
                             "http_port": "5000", "url": "http://localhost:5555", "id": 1},
                            {"app_name": "echo-server", "path": "jmalloc/echo-server",
@@ -136,4 +135,12 @@ with api.app.test_client() as test_client:
         assert len(api._update_config('docker_api/config.json', operation='r')["apps"]) == 2
         api._stop_apps(api.docker_apps["apps"])
 
+
+    def test_stop_apps():
+        response = test_client.post('/docker-api/apps/stop_all')
+        time.sleep(5)
+        with pytest.raises(req.exceptions.ConnectionError):
+            req.get("http://localhost:6545").status_code
+        with pytest.raises(req.exceptions.ConnectionError):
+            req.get("http://localhost:5555").status_code
 
