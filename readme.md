@@ -1,5 +1,7 @@
 <h1 align="center">Docker-runner API</h1>
 
+![Image alt](https://github.com/aleplahotnik/Docker_app/raw/work/image/arhitecture.png)
+
 ---
 **A small python-flask API for managing docker containers at local machine.**
 
@@ -13,8 +15,8 @@ Also, you can edit directly config.json file and then put to "Update config" lin
 # Installation features
 
 1. Copy API from repository;
-2. Install all requirements apps from requirements.txt `/final_task$ pip install -r requirements.txt `
-3. Run app by `/final_task$ python docker_api/app.py`
+2. Install all requirements apps from requirements.txt `/Docker_app$ pip install -r requirements.txt `
+3. Run app by `/Docker_app$ python docker_api/app.py`
 4. Main page at http://localhost:5000/docker-api/apps
 
 ## Required python v3 and more:
