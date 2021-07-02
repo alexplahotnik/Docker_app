@@ -1,6 +1,6 @@
 <h1 align="center">Docker-runner API</h1>
 
-![Image alt](https://github.com/aleplahotnik/Docker_app/raw/work/image/arhitecture.png)
+![Image alt](image/arhitecture.png)
 
 ---
 **A small python-flask API for managing docker containers at local machine.**
