@@ -67,7 +67,7 @@ with api.app.test_client() as test_client:
         api._stop_apps([{"app_name": "echo-server2", "path": "jmalloc/echo-server",
                          "http_port": "8080", "url": "http://localhost:44655", "id": 3}])
 
-
+    # Start test session
     def test_update_config_changes():
         config = {"apps": [{"app_name": "catnip", "path": "alexplahotnik/catnip",
                             "http_port": "5000", "url": "http://localhost:5555", "id": 1},

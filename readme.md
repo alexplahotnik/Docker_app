@@ -47,14 +47,14 @@ It also update your config file.
 ## 3. Delete docker container.
 
 In GUI you can push "Delete app" button at the main page.  
-`curl -X POST http://localhost:5000/docker-api/apps/5/delete`
+`curl -X POST http://localhost:5000/docker-api/apps/<app_id>/delete`
 
 ## 4. Update information about docker container.
 
 In GUI you can push "Change config" link, fill in the fields of the proposed form and click "submit" button.
 If there be some incorrect information, the docker will not be started and you received a error message.
 But app always stops the initial application.  
-`curl -X POST -d "app_name=some_name&path=some_path&http_port=some_port&url=some_url" http://localhost:5000/docker-api/apps/1/edit`
+`curl -X POST -d "app_name=some_name&path=some_path&http_port=some_port&url=some_url" http://localhost:5000/docker-api/apps/<app_id>/edit`
 
 ## 5. Update all docker-containers according to config file.
 
