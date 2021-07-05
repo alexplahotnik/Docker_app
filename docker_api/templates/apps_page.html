@@ -15,14 +15,26 @@
                 <th width="150" height="20" align="middle" valign="middle">Http port</th>
                 <th width="150" height="20" align="middle" valign="middle">URL</th>
                 <th width="150" height="20" align="middle" valign="middle">Apps ID</th>
+                <th width="150" height="20" align="middle" valign="middle">Active</th>
                 <th width="150" height="20" align="middle" valign="middle">Edit</th>
                 <th width="150" height="20" align="middle" valign="middle">Delete</th>
             </tr>
         {% for app in docker_apps %}
             <tr>
-            {% for value in app.values() %}
-                <td width="150" height="20" align="middle" valign="middle">{{value}}</td>
+            {% for key, value in app.items() %}
+                {% if key == "url" %}
+                    <td width="150" height="20" align="middle" valign="middle">
+                        <a href="{{value}}">{{value}}</a>
+                    </td>
+                {% else %}
+                    <td width="150" height="20" align="middle" valign="middle">{{value}}</td>
+                {% endif %}
             {% endfor %}
+                {% if app['id'] in active_apps %}
+                    <td width="150" height="20" align="middle" valign="middle">Active</td>
+                {% else %}
+                    <td width="150" height="20" align="middle" valign="middle">Stopped</td>
+                {% endif %}
                 <td width="150" height="20" align="middle" valign="middle">
                     <a href="{{ url_for('update_app', app_id=app['id'])}}">
                     <span class="badge badge-warning">Change config</span></a>

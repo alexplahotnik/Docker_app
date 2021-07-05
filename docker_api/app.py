@@ -69,7 +69,7 @@ def index():
 
 @app.route("/docker-api/apps", methods=["GET"])
 def get_apps():
-    return render_template("apps_page.html", docker_apps=docker_apps["apps"])
+    return render_template("apps_page.html", docker_apps=docker_apps["apps"], active_apps=active_apps)
 
 
 @app.route("/docker-api/apps/update", methods=["GET"])
