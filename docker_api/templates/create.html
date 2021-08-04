@@ -1,0 +1,40 @@
+{% extends "header.html" %}
+
+{% block content %}
+<h1>{% block title %} Add new app {% endblock %}</h1>
+
+<form method="post">
+    <div class="form-group">
+        <label for="app_name">App name</label>
+        <input type="text" name="app_name" placeholder="App name"
+               class="form-control"
+               value="{{ request.form['app_name'] }}">
+        </input>
+    </div>
+    <div class="form-group">
+        <label for="path">Path to docker</label>
+        <input type="text" name="path" placeholder="Path"
+               class="form-control"
+               value="{{ request.form['path'] }}">
+        </input>
+    </div>
+    <div class="form-group">
+        <label for="http_port">HTTP port</label>
+        <input type="text" name="http_port" placeholder="Http port"
+               class="form-control"
+               value="{{ request.form['http_port'] }}">
+        </input>
+    </div>
+    <div class="form-group">
+        <label for="url">URL</label>
+        <input type="text" name="url" placeholder="URL"
+               class="form-control"
+               value="{{ request.form['url'] }}">
+        </input>
+    </div>
+    <div class="form-group">
+        <button type="submit" class="btn btn-primary">Submit</button>
+    </div>
+</form>
+<hr>
+{% endblock %}

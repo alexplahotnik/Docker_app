@@ -1,0 +1,52 @@
+{% extends "header.html" %}
+
+{% block content %}
+<ul>
+    <li>
+        <p><a class="nav-link" href="{{url_for('create_app')}}">Add app</a></p>
+        <p> <a class="nav-link" href="{{url_for('update_config_changes')}}">Restart containers according to config</a></p>
+        <p><a class="nav-link" href="{{url_for('stop_all_apps')}}">Stop apps</a></p>
+    </li>
+    <table border="1">
+        <tbody>
+            <tr>
+                <th width="150" height="20" align="middle" valign="middle">Apps name</th>
+                <th width="150" height="20" align="middle" valign="middle">Path</th>
+                <th width="150" height="20" align="middle" valign="middle">Http port</th>
+                <th width="150" height="20" align="middle" valign="middle">URL</th>
+                <th width="150" height="20" align="middle" valign="middle">Apps ID</th>
+                <th width="150" height="20" align="middle" valign="middle">Active</th>
+                <th width="150" height="20" align="middle" valign="middle">Edit</th>
+                <th width="150" height="20" align="middle" valign="middle">Delete</th>
+            </tr>
+        {% for app in docker_apps %}
+            <tr>
+            {% for key, value in app.items() %}
+                {% if key == "url" %}
+                    <td width="150" height="20" align="middle" valign="middle">
+                        <a href="{{value}}">{{value}}</a>
+                    </td>
+                {% else %}
+                    <td width="150" height="20" align="middle" valign="middle">{{value}}</td>
+                {% endif %}
+            {% endfor %}
+                {% if app['id'] in active_apps %}
+                    <td width="150" height="20" align="middle" valign="middle">Active</td>
+                {% else %}
+                    <td width="150" height="20" align="middle" valign="middle">Stopped</td>
+                {% endif %}
+                <td width="150" height="20" align="middle" valign="middle">
+                    <a href="{{ url_for('update_app', app_id=app['id'])}}">
+                    <span class="badge badge-warning">Change config</span></a>
+                </td>
+                <td width="150" height="20" align="middle" valign="middle">
+                    <form action="{{ url_for('del_app', app_id=app['id']) }}" method="POST">
+                    <input type="submit" value="Delete app" class="btn btn-danger btn-sm"
+                    onclick="return confirm('Are you sure you want to delete this post?')"></form>
+                </td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</ul>
+{% endblock %}
